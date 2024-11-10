@@ -1,0 +1,124 @@
+'use client'
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { ChevronLeft, ChevronRight, HelpCircle } from "lucide-react"
+import PokemonCard from "@/components/pokemon-card"
+import StatsPanel from "@/components/stats-panel"
+import PokemonCardSelection from "@/components/pokemon-card-selection"
+import { GlareCard } from "@/components/ui/glare-card"
+
+export default function Home() {
+  const [pokemonId, setPokemonId] = useState(1)
+  const [pokemonData, setPokemonData] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchPokemonData = async () => {
+      const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`)
+      const data = await response.json()
+      setPokemonData({
+        name: data.name,
+        description: "Dynamic description here",
+        height: data.height / 10, // Convert to meters
+        weight: data.weight / 10, // Convert to kg
+        category: "Dynamic category",
+        abilities: data.abilities.map((ability: any) => ability.ability.name),
+        gender: ["male", "female"],
+        types: data.types.map((type: any) => type.type.name)
+      })
+    }
+    fetchPokemonData()
+  }, [pokemonId])
+
+  const handleNavigation = (direction: "left" | "right") => {
+    setPokemonId((prevId) => {
+      if (direction === "left") {
+        return prevId === 1 ? 1025 : prevId - 1
+      } else {
+        return prevId === 1025 ? 1 : prevId + 1
+      }
+    })
+  }
+
+  if (!pokemonData) return <div>Loading...</div>
+
+  return (
+    <div className="flex justify-center items-center w-full h-screen max-w-5xl mx-auto p-2">
+      <div className="relative">
+        <div className="flex justify-between items-center mb-2">
+          <Button
+            variant="ghost"
+            className="p-1"
+            onClick={() => handleNavigation("left")}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <h1 className="text-lg font-bold text-center">
+            {pokemonData.name} <span className="text-gray-500">#{String(pokemonId).padStart(4, '0')}</span>
+          </h1>
+          <Button
+            variant="ghost"
+            className="p-1"
+            onClick={() => handleNavigation("right")}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 rounded-lg p-2 flex items-center justify-center">
+                <GlareCard>
+                <PokemonCard pokemonId={pokemonId} /></GlareCard>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm">{pokemonData.description}</p>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="font-semibold">Height:</span> {pokemonData.height}m
+                  </div>
+                  <div>
+                    <span className="font-semibold">Weight:</span> {pokemonData.weight}kg
+                  </div>
+                  <div>
+                    <span className="font-semibold">Category:</span> {pokemonData.category}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Abilities:</span> {pokemonData.abilities.join(", ")}
+                  </div>
+                  <div className="col-span-2">
+                    <span className="font-semibold">Gender:</span>
+                    <span className="ml-2">
+                      {pokemonData.gender.includes("male") && <HelpCircle className="w-4 h-4 inline" />}
+                      {pokemonData.gender.includes("female") && <HelpCircle className="w-4 h-4 inline ml-1" />}
+                    </span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="font-semibold">Type:</span>
+                    <div className="flex gap-2 mt-1">
+                      {pokemonData.types.map((type: string) => (
+                        <span key={type} className={`px-2 py-1 text-xs text-white rounded-md ${type.toLowerCase() === 'fire' ? 'bg-orange-400' : 'bg-blue-300'}`}>
+                          {type}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-sm mb-2">Stats</h3>
+                <StatsPanel pokemonId={pokemonId} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <PokemonCardSelection />
+      </div>
+    </div>
+  )
+}
